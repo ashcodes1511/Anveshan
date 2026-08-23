@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anveshan — a smarter watch over every login</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A150F; --panel:#0F2018; --panel-2:#132A1F; --line:#1E3A2A; --moss:#193D2A;
+    --emerald:#2FD180; --emerald-dim:#1D8F58; --amber:#E8B14E; --coral:#EF6659;
+    --text:#E7F3EA; --text-dim:#8FAA9B;
+  }
+  * { font-family: 'Inter', sans-serif; }
+  .font-display { font-family: 'Sora', sans-serif; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  body { background: var(--bg); color: var(--text); }
+  .grid-texture {
+    background-image: linear-gradient(rgba(47,209,128,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(47,209,128,0.045) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+  .radar-sweep { background: conic-gradient(from 0deg, rgba(47,209,128,0) 0deg, rgba(47,209,128,0.5) 18deg, rgba(47,209,128,0) 60deg); animation: spin 3.4s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes ping-slow { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(2.6); opacity: 0; } }
+  .radar-ping { animation: ping-slow 2.6s cubic-bezier(0,0,0.2,1) infinite; }
+  @keyframes slideIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: translateY(0); } }
+  .case-row { animation: slideIn 0.35s ease; }
+  .signal-row { transition: all 0.25s ease; border-left: 3px solid var(--line); }
+  .signal-row.triggered { border-left-color: var(--coral); background: rgba(239,102,89,0.06); }
+  .signal-row.clear { border-left-color: var(--emerald-dim); background: rgba(47,209,128,0.04); }
+  input, select { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); }
+  input:focus, select:focus { outline: none; border-color: var(--emerald-dim); box-shadow: 0 0 0 3px rgba(47,209,128,0.12); }
+  .btn-primary { background: linear-gradient(180deg, #34DB8A, #23A868); box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 8px 24px -8px rgba(47,209,128,0.55); }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-primary:active { filter: brightness(0.94); }
+  .btn-freeze { background: rgba(239,102,89,0.15); color: var(--coral); border: 1px solid rgba(239,102,89,0.35); }
+  .btn-freeze:hover { background: rgba(239,102,89,0.25); }
+  .btn-allow { background: rgba(47,209,128,0.15); color: var(--emerald); border: 1px solid rgba(47,209,128,0.35); }
+  .btn-allow:hover { background: rgba(47,209,128,0.25); }
+  .score-ring { transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1), stroke 0.4s ease; }
+  .tab-btn { transition: all 0.2s ease; }
+  .tab-btn.active { color: var(--emerald); border-bottom-color: var(--emerald); }
+  .tab-btn:not(.active) { color: var(--text-dim); border-bottom-color: transparent; }
+  .pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
+  @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--panel); } ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  .badge-LOW { background: rgba(47,209,128,0.15); color: var(--emerald); }
+  .badge-MEDIUM { background: rgba(232,177,78,0.15); color: var(--amber); }
+  .badge-HIGH { background: rgba(239,102,89,0.15); color: var(--coral); }
+</style>
+</head>
+<body class="min-h-screen grid-texture">
+
+<header class="border-b border-[var(--line)] bg-[var(--panel)]/80 backdrop-blur sticky top-0 z-20">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="relative w-9 h-9 rounded-full border border-[var(--emerald-dim)] flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 radar-sweep rounded-full"></div>
+        <div class="w-1.5 h-1.5 rounded-full bg-[var(--emerald)] relative z-10"></div>
+      </div>
+      <div>
+        <h1 class="font-display font-bold text-lg tracking-tight leading-none">Anveshan</h1>
+        <p class="text-[11px] text-[var(--text-dim)] font-mono tracking-wide -mt-0.5">a smarter watch over every login</p>
+      </div>
+    </div>
+    <nav class="flex gap-6">
+      <button class="tab-btn active font-mono text-xs uppercase tracking-wide pb-1 border-b-2" data-tab="queue" onclick="switchTab('queue')">Live Queue</button>
+      <button class="tab-btn font-mono text-xs uppercase tracking-wide pb-1 border-b-2" data-tab="score" onclick="switchTab('score')">Score Event</button>
+      <button class="tab-btn font-mono text-xs uppercase tracking-wide pb-1 border-b-2" data-tab="analytics" onclick="switchTab('analytics')">Analytics</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Stats strip -->
+<div class="border-b border-[var(--line)] bg-[var(--panel-2)]/50">
+  <div class="max-w-7xl mx-auto px-6 py-3 flex items-center gap-8 text-xs font-mono">
+    <div class="flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-[var(--emerald)] pulse-dot"></span>
+      <span class="text-[var(--text-dim)]">LIVE</span>
+    </div>
+    <div><span class="text-[var(--text-dim)]">CASES TODAY</span> <span id="stat-total" class="text-[var(--text)] font-semibold ml-1">0</span></div>
+    <div><span class="text-[var(--text-dim)]">HIGH RISK</span> <span id="stat-high" class="text-[var(--coral)] font-semibold ml-1">0</span></div>
+    <div><span class="text-[var(--text-dim)]">FROZEN</span> <span id="stat-frozen" class="text-[var(--amber)] font-semibold ml-1">0</span></div>
+    <div class="ml-auto flex gap-2">
+      <button onclick="simulateEvent('normal')" class="text-xs font-mono px-3 py-1 rounded-full border border-[var(--line)] hover:border-[var(--emerald-dim)] hover:text-[var(--emerald)] transition text-[var(--text-dim)]">+ normal event</button>
+      <button onclick="simulateEvent('attack')" class="text-xs font-mono px-3 py-1 rounded-full border border-[var(--line)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition text-[var(--text-dim)]">+ simulate attack</button>
+      <button id="auto-toggle" onclick="toggleAutoFeed()" class="text-xs font-mono px-3 py-1 rounded-full btn-primary text-[#06210F] font-semibold">▶ start live feed</button>
+    </div>
+  </div>
+</div>
+
+<main class="max-w-7xl mx-auto px-6 py-8">
+
+  <!-- TAB: Live Queue -->
+  <section id="tab-queue">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <span class="font-mono text-xs text-[var(--emerald)] tracking-widest uppercase">Case queue</span>
+        <h2 class="font-display text-2xl font-semibold mt-1">Incoming events</h2>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-[1.3fr_1fr] gap-6">
+      <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl overflow-hidden">
+        <div class="grid grid-cols-[80px_1fr_90px_100px_110px] gap-2 px-4 py-2 border-b border-[var(--line)] text-[10px] font-mono text-[var(--text-dim)] uppercase tracking-wide">
+          <span>ID</span><span>Signal summary</span><span>Score</span><span>Level</span><span>Status</span>
+        </div>
+        <div id="queue-list" class="max-h-[560px] overflow-y-auto divide-y divide-[var(--line)]">
+          <div class="px-4 py-10 text-center text-sm text-[var(--text-dim)]">No cases yet. Start the live feed or simulate an event.</div>
+        </div>
+      </div>
+
+      <div id="case-detail" class="bg-[var(--panel)] border border-dashed border-[var(--line)] rounded-2xl p-8 text-center h-fit">
+        <div class="relative w-14 h-14 mx-auto mb-4 rounded-full border border-[var(--line)] flex items-center justify-center">
+          <div class="absolute w-14 h-14 rounded-full border border-[var(--emerald-dim)] radar-ping"></div>
+          <div class="w-2 h-2 rounded-full bg-[var(--text-dim)]"></div>
+        </div>
+        <p class="text-sm text-[var(--text-dim)]">Select a case from the queue to review its signals and take action.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: Score Event -->
+  <section id="tab-score" class="hidden">
+    <div class="grid lg:grid-cols-[1fr_1.15fr] gap-8">
+      <div class="space-y-6">
+        <div>
+          <span class="font-mono text-xs text-[var(--emerald)] tracking-widest uppercase">Manual entry</span>
+          <h2 class="font-display text-2xl font-semibold mt-1">Submit a login or transaction</h2>
+          <p class="text-sm text-[var(--text-dim)] mt-1">Score a single hand-crafted event. Useful for testing edge cases.</p>
+        </div>
+        <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">USER ID</label><input id="user_id" value="demo_user" class="w-full rounded-lg px-3 py-2 text-sm"></div>
+            <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">EVENT TYPE</label>
+              <select id="event_type" class="w-full rounded-lg px-3 py-2 text-sm">
+                <option value="login">login</option><option value="transaction" selected>transaction</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">DEVICE ID</label><input id="device_id" value="device_unknown_999" class="w-full rounded-lg px-3 py-2 text-sm font-mono"></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">LATITUDE</label><input id="latitude" value="25.0" class="w-full rounded-lg px-3 py-2 text-sm"></div>
+            <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">LONGITUDE</label><input id="longitude" value="90.0" class="w-full rounded-lg px-3 py-2 text-sm"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">SIM CHANGE FLAGGED</label>
+              <select id="sim_change_flag" class="w-full rounded-lg px-3 py-2 text-sm"><option value="true" selected>true</option><option value="false">false</option></select>
+            </div>
+            <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">MINUTES SINCE</label><input id="sim_change_minutes_ago" value="10" class="w-full rounded-lg px-3 py-2 text-sm"></div>
+          </div>
+          <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">TRANSACTION AMOUNT (₹)</label><input id="transaction_amount" value="50000" class="w-full rounded-lg px-3 py-2 text-sm"></div>
+          <button onclick="submitEvent()" class="btn-primary w-full rounded-lg py-2.5 text-sm font-semibold text-[#06210F] mt-2">Score this event</button>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="loadPreset('normal')" class="text-xs font-mono px-3 py-1.5 rounded-full border border-[var(--line)] text-[var(--text-dim)] hover:border-[var(--emerald-dim)] hover:text-[var(--emerald)] transition">normal login</button>
+          <button onclick="loadPreset('attack')" class="text-xs font-mono px-3 py-1.5 rounded-full border border-[var(--line)] text-[var(--text-dim)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition">simulate SIM-swap attack</button>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div><span class="font-mono text-xs text-[var(--emerald)] tracking-widest uppercase">Assessment</span><h2 class="font-display text-2xl font-semibold mt-1">Risk verdict</h2></div>
+        <div id="empty-state" class="bg-[var(--panel)] border border-dashed border-[var(--line)] rounded-2xl p-10 text-center">
+          <div class="relative w-16 h-16 mx-auto mb-4 rounded-full border border-[var(--line)] flex items-center justify-center">
+            <div class="absolute w-16 h-16 rounded-full border border-[var(--emerald-dim)] radar-ping"></div>
+            <div class="w-2 h-2 rounded-full bg-[var(--text-dim)]"></div>
+          </div>
+          <p class="text-sm text-[var(--text-dim)]">Watching. Submit an event on the left to score it.</p>
+        </div>
+        <div id="result-card" class="hidden bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
+          <div class="flex items-center gap-6">
+            <div class="relative w-[110px] h-[110px] shrink-0">
+              <svg width="110" height="110" viewBox="0 0 110 110" class="-rotate-90">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--line)" stroke-width="10"/>
+                <circle id="score-ring" class="score-ring" cx="55" cy="55" r="46" fill="none" stroke="var(--emerald)" stroke-width="10" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <div id="score-num" class="font-display text-2xl font-bold leading-none">--</div>
+                <div class="text-[10px] font-mono text-[var(--text-dim)] mt-0.5">/ 100</div>
+              </div>
+            </div>
+            <div class="flex-1 space-y-1.5">
+              <div class="flex items-center gap-2"><span id="level-badge" class="text-xs font-mono font-semibold px-2.5 py-1 rounded-full">—</span><span class="text-xs font-mono text-[var(--text-dim)]">RISK LEVEL</span></div>
+              <div class="flex items-center gap-2"><span id="action-badge" class="text-sm font-display font-semibold">—</span><span class="text-xs font-mono text-[var(--text-dim)]">SUGGESTED ACTION</span></div>
+            </div>
+          </div>
+          <p id="explanation" class="text-sm text-[var(--text-dim)] mt-5 pt-5 border-t border-[var(--line)] leading-relaxed"></p>
+          <div class="mt-5 pt-5 border-t border-[var(--line)] space-y-2" id="signals-list"></div>
+        </div>
+        <div id="error-card" class="hidden bg-[var(--panel)] border border-[var(--coral)]/40 rounded-2xl p-6 text-sm">
+          <p class="font-display font-semibold text-[var(--coral)] mb-1">Couldn't reach the backend</p>
+          <p class="text-[var(--text-dim)]">Make sure <code class="font-mono text-[var(--text)]">uvicorn app.main:app --reload</code> is running at <code class="font-mono text-[var(--text)]">127.0.0.1:8000</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: Analytics -->
+  <section id="tab-analytics" class="hidden">
+    <div class="mb-6"><span class="font-mono text-xs text-[var(--emerald)] tracking-widest uppercase">Overview</span><h2 class="font-display text-2xl font-semibold mt-1">Session analytics</h2></div>
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
+        <p class="text-xs font-mono text-[var(--text-dim)] uppercase">Total cases</p>
+        <p id="an-total" class="font-display text-3xl font-bold mt-1">0</p>
+      </div>
+      <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
+        <p class="text-xs font-mono text-[var(--text-dim)] uppercase">Frozen by analyst</p>
+        <p id="an-frozen" class="font-display text-3xl font-bold mt-1 text-[var(--coral)]">0</p>
+      </div>
+      <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
+        <p class="text-xs font-mono text-[var(--text-dim)] uppercase">Avg. risk score</p>
+        <p id="an-avg" class="font-display text-3xl font-bold mt-1">0</p>
+      </div>
+    </div>
+    <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
+      <p class="text-xs font-mono text-[var(--text-dim)] uppercase mb-4">Risk distribution</p>
+      <div id="bar-chart" class="space-y-3"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="max-w-7xl mx-auto px-6 pb-10 pt-4 text-xs font-mono text-[var(--text-dim)] border-t border-[var(--line)]">
+  Anveshan · rules + anomaly scoring engine · explainable by design, no black box · demo data is in-memory, resets on server restart
+</footer>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let autoFeedInterval = null;
+let allCases = [];
+
+function switchTab(name) {
+  ['queue','score','analytics'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('hidden', t !== name);
+    document.querySelector(`[data-tab="${t}"]`).classList.toggle('active', t === name);
+  });
+  if (name === 'analytics') renderAnalytics();
+}
+
+function loadPreset(kind) {
+  if (kind === 'normal') {
+    device_id.value = 'device_abc123'; latitude.value = '12.97'; longitude.value = '77.59';
+    sim_change_flag.value = 'false'; sim_change_minutes_ago.value = ''; transaction_amount.value = '1800';
+  } else {
+    device_id.value = 'device_unknown_999'; latitude.value = '25.0'; longitude.value = '90.0';
+    sim_change_flag.value = 'true'; sim_change_minutes_ago.value = '10'; transaction_amount.value = '50000';
+  }
+}
+
+const levelStyles = {
+  LOW:    { ring: '#2FD180' },
+  MEDIUM: { ring: '#E8B14E' },
+  HIGH:   { ring: '#EF6659' },
+};
+
+async function submitEvent() {
+  const body = {
+    user_id: user_id.value, event_type: event_type.value, device_id: device_id.value,
+    latitude: parseFloat(latitude.value), longitude: parseFloat(longitude.value),
+    sim_change_flag: sim_change_flag.value === 'true',
+    sim_change_minutes_ago: sim_change_minutes_ago.value ? parseInt(sim_change_minutes_ago.value) : null,
+    transaction_amount: transaction_amount.value ? parseFloat(transaction_amount.value) : null,
+  };
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('error-card').classList.add('hidden');
+  try {
+    const res = await fetch(API + '/api/score-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error('bad response');
+    renderResult(await res.json());
+    refreshQueue();
+  } catch (e) {
+    document.getElementById('result-card').classList.add('hidden');
+    document.getElementById('error-card').classList.remove('hidden');
+  }
+}
+
+function renderResult(data) {
+  const card = document.getElementById('result-card');
+  card.classList.remove('hidden');
+  const style = levelStyles[data.risk_level] || levelStyles.LOW;
+  const offset = 289 - (data.risk_score / 100) * 289;
+  const ring = document.getElementById('score-ring');
+  ring.style.stroke = style.ring; ring.style.strokeDashoffset = offset;
+  document.getElementById('score-num').textContent = data.risk_score;
+  const levelBadge = document.getElementById('level-badge');
+  levelBadge.textContent = data.risk_level;
+  levelBadge.className = 'text-xs font-mono font-semibold px-2.5 py-1 rounded-full badge-' + data.risk_level;
+  document.getElementById('action-badge').textContent = data.action;
+  document.getElementById('action-badge').style.color = style.ring;
+  document.getElementById('explanation').textContent = data.explanation;
+  document.getElementById('signals-list').innerHTML = data.signals.map(s => `
+    <div class="signal-row ${s.triggered ? 'triggered' : 'clear'} rounded-r-lg px-3 py-2">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-mono ${s.triggered ? 'text-[var(--coral)]' : 'text-[var(--text-dim)]'}">${s.signal}</span>
+        <span class="text-xs font-mono ${s.triggered ? 'text-[var(--coral)]' : 'text-[var(--text-dim)]'}">${s.triggered ? '+' + s.points : '0'}</span>
+      </div>
+      <p class="text-xs text-[var(--text-dim)] mt-0.5">${s.reason}</p>
+    </div>`).join('');
+}
+
+async function simulateEvent(kind) {
+  try {
+    await fetch(API + '/api/simulate?kind=' + kind, { method: 'POST' });
+    refreshQueue();
+  } catch (e) { console.error(e); }
+}
+
+function toggleAutoFeed() {
+  const btn = document.getElementById('auto-toggle');
+  if (autoFeedInterval) {
+    clearInterval(autoFeedInterval); autoFeedInterval = null;
+    btn.textContent = '▶ start live feed';
+  } else {
+    autoFeedInterval = setInterval(() => simulateEvent('random'), 2500);
+    btn.textContent = '■ stop live feed';
+  }
+}
+
+async function refreshQueue() {
+  try {
+    const [casesRes, statsRes] = await Promise.all([fetch(API + '/api/cases'), fetch(API + '/api/stats')]);
+    allCases = await casesRes.json();
+    const stats = await statsRes.json();
+    document.getElementById('stat-total').textContent = stats.total_cases;
+    document.getElementById('stat-high').textContent = stats.high_risk;
+    document.getElementById('stat-frozen').textContent = stats.frozen;
+    renderQueue();
+  } catch (e) { /* backend not running yet */ }
+}
+
+function renderQueue() {
+  const list = document.getElementById('queue-list');
+  if (allCases.length === 0) {
+    list.innerHTML = `<div class="px-4 py-10 text-center text-sm text-[var(--text-dim)]">No cases yet. Start the live feed or simulate an event.</div>`;
+    return;
+  }
+  list.innerHTML = allCases.map(c => `
+    <div class="case-row grid grid-cols-[80px_1fr_90px_100px_110px] gap-2 px-4 py-3 items-center cursor-pointer hover:bg-[var(--panel-2)] transition" onclick="showCase('${c.id}')">
+      <span class="font-mono text-xs text-[var(--text-dim)]">${c.id}</span>
+      <span class="text-xs truncate">${c.event.device_id || 'unknown device'} · ${c.event.event_type}</span>
+      <span class="font-mono text-xs font-semibold">${c.risk.risk_score}</span>
+      <span class="text-[10px] font-mono px-2 py-0.5 rounded-full w-fit badge-${c.risk.risk_level}">${c.risk.risk_level}</span>
+      <span class="text-[10px] font-mono ${c.decision ? (c.decision === 'FROZEN' ? 'text-[var(--coral)]' : 'text-[var(--emerald)]') : 'text-[var(--text-dim)]'}">${c.decision || 'pending'}</span>
+    </div>`).join('');
+}
+
+function showCase(id) {
+  const c = allCases.find(x => x.id === id);
+  if (!c) return;
+  const style = levelStyles[c.risk.risk_level] || levelStyles.LOW;
+  document.getElementById('case-detail').innerHTML = `
+    <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <span class="font-mono text-xs text-[var(--text-dim)]">CASE ${c.id}</span>
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full badge-${c.risk.risk_level}">${c.risk.risk_level}</span>
+      </div>
+      <div class="flex items-center gap-4 mb-4">
+        <div class="relative w-16 h-16 shrink-0">
+          <svg width="64" height="64" viewBox="0 0 64 64" class="-rotate-90">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="var(--line)" stroke-width="7"/>
+            <circle cx="32" cy="32" r="26" fill="none" stroke="${style.ring}" stroke-width="7" stroke-linecap="round" stroke-dasharray="163" stroke-dashoffset="${163 - (c.risk.risk_score/100)*163}"/>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center font-mono text-sm font-bold">${c.risk.risk_score}</div>
+        </div>
+        <div>
+          <p class="font-display font-semibold">${c.event.user_id}</p>
+          <p class="text-xs text-[var(--text-dim)] font-mono">${c.event.event_type} · ${c.event.device_id || 'n/a'}</p>
+        </div>
+      </div>
+      <p class="text-sm text-[var(--text-dim)] mb-4 leading-relaxed">${c.risk.explanation}</p>
+      <div class="space-y-2 mb-5">
+        ${c.risk.signals.map(s => `
+          <div class="signal-row ${s.triggered ? 'triggered' : 'clear'} rounded-r-lg px-3 py-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono ${s.triggered ? 'text-[var(--coral)]' : 'text-[var(--text-dim)]'}">${s.signal}</span>
+              <span class="text-xs font-mono ${s.triggered ? 'text-[var(--coral)]' : 'text-[var(--text-dim)]'}">${s.triggered ? '+' + s.points : '0'}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+      ${c.decision ? `
+        <div class="text-center py-2 text-xs font-mono ${c.decision === 'FROZEN' ? 'text-[var(--coral)]' : 'text-[var(--emerald)]'}">
+          Decision recorded: ${c.decision}
+        </div>` : `
+        <div class="flex gap-2">
+          <button onclick="decideCase('${c.id}','FROZEN')" class="btn-freeze flex-1 rounded-lg py-2 text-xs font-mono font-semibold">Freeze account</button>
+          <button onclick="decideCase('${c.id}','ALLOWED')" class="btn-allow flex-1 rounded-lg py-2 text-xs font-mono font-semibold">Allow transaction</button>
+        </div>`}
+    </div>`;
+}
+
+async function decideCase(id, decision) {
+  try {
+    await fetch(API + `/api/cases/${id}/decision?decision=${decision}`, { method: 'POST' });
+    await refreshQueue();
+    showCase(id);
+  } catch (e) { console.error(e); }
+}
+
+function renderAnalytics() {
+  const total = allCases.length;
+  const frozen = allCases.filter(c => c.decision === 'FROZEN').length;
+  const avg = total ? Math.round(allCases.reduce((s,c) => s + c.risk.risk_score, 0) / total) : 0;
+  document.getElementById('an-total').textContent = total;
+  document.getElementById('an-frozen').textContent = frozen;
+  document.getElementById('an-avg').textContent = avg;
+
+  const levels = ['LOW','MEDIUM','HIGH'];
+  const counts = levels.map(l => allCases.filter(c => c.risk.risk_level === l).length);
+  const max = Math.max(...counts, 1);
+  const colors = { LOW: 'var(--emerald)', MEDIUM: 'var(--amber)', HIGH: 'var(--coral)' };
+  document.getElementById('bar-chart').innerHTML = levels.map((l,i) => `
+    <div>
+      <div class="flex justify-between text-xs font-mono mb-1"><span class="text-[var(--text-dim)]">${l}</span><span>${counts[i]}</span></div>
+      <div class="h-2 rounded-full bg-[var(--panel-2)] overflow-hidden">
+        <div class="h-full rounded-full" style="width:${(counts[i]/max)*100}%; background:${colors[l]}"></div>
+      </div>
+    </div>`).join('');
+}
+
+// initial load
+refreshQueue();
+setInterval(refreshQueue, 4000);
+</script>
+</body>
+</html>
