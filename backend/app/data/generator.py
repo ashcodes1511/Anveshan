@@ -52,28 +52,34 @@ def generate_random_attack_event():
         user["lat"],
         user["lon"]
     )
-def generate_normal_event(user_id: str, home_lat: float, home_lon: float, known_device: str):
+def generate_normal_event(user_id, home_lat, home_lon, known_device):
     return {
         "user_id": user_id,
         "event_type": random.choice(["login", "transaction"]),
         "timestamp": (datetime.utcnow() - timedelta(minutes=random.randint(0, 500))).isoformat(),
-        "device_id": known_device,
+
+        # 20% chance of new device
+        "device_id": known_device if random.random() < 0.8 else f"device_{uuid.uuid4().hex[:6]}",
+
         "latitude": home_lat + random.uniform(-0.05, 0.05),
         "longitude": home_lon + random.uniform(-0.05, 0.05),
-        "sim_change_flag": False,
-        "sim_change_minutes_ago": None,
+
+        # occasional SIM change
+        "sim_change_flag": random.random() < 0.15,
+        "sim_change_minutes_ago": random.randint(1, 60),
+
         "transaction_amount": round(random.uniform(200, 5000), 2),
     }
 
 
 def generate_attack_sequence(user_id: str, home_lat: float, home_lon: float):
 
-    attacker_lat = home_lat + random.uniform(5, 15)
-    attacker_lon = home_lon + random.uniform(5, 15)
-    new_device = f"device_{uuid.uuid4().hex[:8]}"
+    attacker_lat = home_lat + random.uniform(1, 20)
+    attacker_lon = home_lon + random.uniform(1, 20)
+    new_device = "device_{uuid.uuid4().hex[:8]}"
 
-    sim_changed = random.choice([True, False])
-
+    sim_changed = random.random() < 0.7
+    
     return {
         "user_id": user_id,
         "event_type": random.choice(["login", "transaction"]),
@@ -85,9 +91,14 @@ def generate_attack_sequence(user_id: str, home_lat: float, home_lon: float):
         "sim_change_flag": sim_changed,
         "sim_change_minutes_ago": random.randint(1, 60) if sim_changed else None,
 
-        "transaction_amount": round(
-            random.uniform(1000, 150000), 2
-        ),
+        "transaction_amount": round(random.choice([
+        random.uniform(1000, 5000),
+        random.uniform(5000, 20000),
+        random.uniform(20000, 150000)
+    ]),
+    2
+),
+        
     }
 
 
