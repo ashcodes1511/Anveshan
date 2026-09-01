@@ -109,7 +109,16 @@ def score_event(event: Event) -> RiskResponse:
         total_score += WEIGHTS["activity_gap_anomaly"]
 
     total_score = min(total_score, 100)
+    import random
 
+if total_score < MEDIUM_RISK_THRESHOLD:      # LOW
+    total_score = random.randint(1, 29)
+
+elif total_score < HIGH_RISK_THRESHOLD:      # MEDIUM
+    total_score = random.randint(30, 69)
+
+else:                                        # HIGH
+    total_score = random.randint(70, 100)
     if total_score >= HIGH_RISK_THRESHOLD:
         risk_level, action = "HIGH", "FREEZE"
     elif total_score >= MEDIUM_RISK_THRESHOLD:
