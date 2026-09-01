@@ -2,12 +2,13 @@
 Central configuration for SwapShield's scoring engine.
 """
 
+
 WEIGHTS = {
-   "new_device": 15,
-"impossible_travel": 25,
-"sim_change_recent": 40,
-"amount_deviation": 15,
-"activity_gap_anomaly": 5,
+    "new_device": 25,
+    "impossible_travel": 30,
+    "sim_change_recent": 35,
+    "amount_deviation": 20,
+    "activity_gap_anomaly": 10,
 }
 
 HIGH_RISK_THRESHOLD = 70

@@ -76,7 +76,7 @@ def generate_attack_sequence(user_id: str, home_lat: float, home_lon: float):
 
     attacker_lat = home_lat + random.uniform(1, 20)
     attacker_lon = home_lon + random.uniform(1, 20)
-    new_device = "device_{uuid.uuid4().hex[:8]}"
+    new_device = f"device_{uuid.uuid4().hex[:8]}"
 
     sim_changed = random.random() < 0.7
     
