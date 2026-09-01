@@ -108,17 +108,17 @@ def score_event(event: Event) -> RiskResponse:
     if gap_triggered:
         total_score += WEIGHTS["activity_gap_anomaly"]
 
-    total_score = min(total_score, 100)
-    import random
+        total_score = min(total_score, 100)
 
-if total_score < MEDIUM_RISK_THRESHOLD:      # LOW
-    total_score = random.randint(1, 29)
+    if total_score < MEDIUM_RISK_THRESHOLD:
+        total_score = random.randint(1, 29)
 
-elif total_score < HIGH_RISK_THRESHOLD:      # MEDIUM
-    total_score = random.randint(30, 69)
+    elif total_score < HIGH_RISK_THRESHOLD:
+        total_score = random.randint(30, 69)
 
-else:                                        # HIGH
-    total_score = random.randint(70, 100)
+    else:
+        total_score = random.randint(70, 100)
+
     if total_score >= HIGH_RISK_THRESHOLD:
         risk_level, action = "HIGH", "FREEZE"
     elif total_score >= MEDIUM_RISK_THRESHOLD:
@@ -127,10 +127,16 @@ else:                                        # HIGH
         risk_level, action = "LOW", "ALLOW"
 
     triggered_reasons = [s.reason for s in signals if s.triggered]
-    explanation = "Flagged due to: " + "; ".join(triggered_reasons) if triggered_reasons else "No unusual signals detected."
+    explanation = (
+        "Flagged due to: " + "; ".join(triggered_reasons)
+        if triggered_reasons
+        else "No unusual signals detected."
+    )
+
     if event.device_id:
-     baseline.setdefault("known_devices", set()).add(event.device_id)
-     baseline["last_event_timestamp"] = event.timestamp
+        baseline.setdefault("known_devices", set()).add(event.device_id)
+
+    baseline["last_event_timestamp"] = event.timestamp
 
     return RiskResponse(
         user_id=event.user_id,
