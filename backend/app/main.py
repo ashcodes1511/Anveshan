@@ -1,13 +1,6 @@
-"""
-Anveshan - Real-Time SIM-Swap & Account-Takeover Fraud Detection
-Entry point for the FastAPI backend.
-
-Run locally:
-    uvicorn app.main:app --reload
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.routes import events
 
@@ -17,7 +10,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Allow the (future) React dashboard to call this API during local dev
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,12 +21,8 @@ app.include_router(events.router, prefix="/api", tags=["events"])
 
 
 @app.get("/")
-def root():
-    return {
-        "service": "Anveshan API",
-        "status": "running",
-        "docs": "/docs",
-    }
+def dashboard():
+    return FileResponse("../frontend/dashboard.html")
 
 
 @app.get("/health")

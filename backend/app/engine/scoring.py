@@ -1,8 +1,8 @@
 """
-SwapShield scoring engine.
+Anveshan scoring engine.
 Rule-based + statistical anomaly checks (no ML) so every score is explainable.
 """
-
+import random
 from datetime import datetime
 from math import radians, sin, cos, sqrt, atan2
 
@@ -18,15 +18,15 @@ from app.config import (
 )
 
 USER_BASELINE = {
-    "demo_user": {
-        "known_devices": {"device_abc123"},
-        "home_lat": 12.9716,
-        "home_lon": 77.5946,
-        "avg_transaction_amount": 2500.0,
-        "last_event_timestamp": datetime(2026, 7, 1, 10, 0, 0),
+    f"cust_{i}": {
+        "known_devices": {f"device_{i}"},
+        "home_lat": random.choice([12.9716, 19.0760, 28.6139, 17.3850]),
+        "home_lon": random.choice([77.5946, 72.8777, 77.2090, 78.4867]),
+        "avg_transaction_amount": random.randint(1000, 10000),
+        "last_event_timestamp": datetime.utcnow()
     }
+    for i in range(1, 101)
 }
-
 
 def haversine_km(lat1, lon1, lat2, lon2) -> float:
     R = 6371.0
@@ -39,6 +39,12 @@ def haversine_km(lat1, lon1, lat2, lon2) -> float:
 
 def score_event(event: Event) -> RiskResponse:
     baseline = USER_BASELINE.get(event.user_id, {})
+    if event.user_id not in USER_BASELINE:
+     USER_BASELINE[event.user_id] = {
+        "known_devices": set(),
+        "avg_transaction_amount": 5000,
+        "last_event_timestamp": datetime.utcnow()
+    }
     signals: list[SignalBreakdown] = []
     total_score = 0
 
@@ -113,6 +119,9 @@ def score_event(event: Event) -> RiskResponse:
 
     triggered_reasons = [s.reason for s in signals if s.triggered]
     explanation = "Flagged due to: " + "; ".join(triggered_reasons) if triggered_reasons else "No unusual signals detected."
+    if event.device_id:
+     baseline.setdefault("known_devices", set()).add(event.device_id)
+     baseline["last_event_timestamp"] = event.timestamp
 
     return RiskResponse(
         user_id=event.user_id,

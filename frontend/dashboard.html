@@ -86,6 +86,7 @@
     <div class="ml-auto flex gap-2">
       <button onclick="simulateEvent('normal')" class="text-xs font-mono px-3 py-1 rounded-full border border-[var(--line)] hover:border-[var(--emerald-dim)] hover:text-[var(--emerald)] transition text-[var(--text-dim)]">+ normal event</button>
       <button onclick="simulateEvent('attack')" class="text-xs font-mono px-3 py-1 rounded-full border border-[var(--line)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition text-[var(--text-dim)]">+ simulate attack</button>
+      <button onclick="resetDemo()" class="text-xs font-mono px-3 py-1 rounded-full border border-red-500 text-red-400 hover:bg-red-500 hover:text-white transition"> Reset Dem </button>
       <button id="auto-toggle" onclick="toggleAutoFeed()" class="text-xs font-mono px-3 py-1 rounded-full btn-primary text-[#06210F] font-semibold">▶ start live feed</button>
     </div>
   </div>
@@ -151,9 +152,11 @@
             </div>
             <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">MINUTES SINCE</label><input id="sim_change_minutes_ago" value="10" class="w-full rounded-lg px-3 py-2 text-sm"></div>
           </div>
-          <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">TRANSACTION AMOUNT (₹)</label><input id="transaction_amount" value="50000" class="w-full rounded-lg px-3 py-2 text-sm"></div>
+                    <div><label class="block text-xs font-mono text-[var(--text-dim)] mb-1.5">TRANSACTION AMOUNT (₹)</label><input id="transaction_amount" value="50000" class="w-full rounded-lg px-3 py-2 text-sm"></div>
+          <button onclick="useRealLocation()" type="button" class="text-xs font-mono px-3 py-1.5 rounded-full border border-[var(--line)] text-[var(--text-dim)] hover:border-[var(--emerald-dim)] hover:text-[var(--emerald)] transition w-full">
+            use my real location + device
+          </button>
           <button onclick="submitEvent()" class="btn-primary w-full rounded-lg py-2.5 text-sm font-semibold text-[#06210F] mt-2">Score this event</button>
-        </div>
         <div class="flex gap-2 flex-wrap">
           <button onclick="loadPreset('normal')" class="text-xs font-mono px-3 py-1.5 rounded-full border border-[var(--line)] text-[var(--text-dim)] hover:border-[var(--emerald-dim)] hover:text-[var(--emerald)] transition">normal login</button>
           <button onclick="loadPreset('attack')" class="text-xs font-mono px-3 py-1.5 rounded-full border border-[var(--line)] text-[var(--text-dim)] hover:border-[var(--coral)] hover:text-[var(--coral)] transition">simulate SIM-swap attack</button>
@@ -198,27 +201,98 @@
   </section>
 
   <!-- TAB: Analytics -->
-  <section id="tab-analytics" class="hidden">
-    <div class="mb-6"><span class="font-mono text-xs text-[var(--emerald)] tracking-widest uppercase">Overview</span><h2 class="font-display text-2xl font-semibold mt-1">Session analytics</h2></div>
-    <div class="grid md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
-        <p class="text-xs font-mono text-[var(--text-dim)] uppercase">Total cases</p>
-        <p id="an-total" class="font-display text-3xl font-bold mt-1">0</p>
-      </div>
-      <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
-        <p class="text-xs font-mono text-[var(--text-dim)] uppercase">Frozen by analyst</p>
-        <p id="an-frozen" class="font-display text-3xl font-bold mt-1 text-[var(--coral)]">0</p>
-      </div>
-      <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
-        <p class="text-xs font-mono text-[var(--text-dim)] uppercase">Avg. risk score</p>
-        <p id="an-avg" class="font-display text-3xl font-bold mt-1">0</p>
-      </div>
-    </div>
-    <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
-      <p class="text-xs font-mono text-[var(--text-dim)] uppercase mb-4">Risk distribution</p>
-      <div id="bar-chart" class="space-y-3"></div>
-    </div>
-  </section>
+  <<section id="tab-analytics" class="hidden">
+
+<div class="mb-6">
+  <span class="font-mono text-xs text-[var(--emerald)] tracking-widest uppercase">
+    Security Intelligence
+  </span>
+  <h2 class="font-display text-3xl font-semibold mt-1">
+    Fraud Operations Center
+  </h2>
+</div>
+
+<div class="grid md:grid-cols-4 gap-4 mb-6">
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
+    <p class="text-xs font-mono text-[var(--text-dim)] uppercase">
+      Total Cases
+    </p>
+    <p id="an-total" class="font-display text-4xl font-bold mt-2">
+      0
+    </p>
+  </div>
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
+    <p class="text-xs font-mono text-[var(--text-dim)] uppercase">
+      Frozen Accounts
+    </p>
+    <p id="an-frozen" class="font-display text-4xl font-bold mt-2 text-[var(--coral)]">
+      0
+    </p>
+  </div>
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
+    <p class="text-xs font-mono text-[var(--text-dim)] uppercase">
+      Avg Risk Score
+    </p>
+    <p id="an-avg" class="font-display text-4xl font-bold mt-2">
+      0
+    </p>
+  </div>
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-5">
+    <p class="text-xs font-mono text-[var(--text-dim)] uppercase">
+      Detection Rate
+    </p>
+    <p id="an-detection" class="font-display text-4xl font-bold mt-2 text-[var(--emerald)]">
+      0%
+    </p>
+  </div>
+
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
+    <h3 class="font-mono text-xs uppercase text-[var(--text-dim)] mb-4">
+      Fraud Funnel
+    </h3>
+
+    <div id="fraud-funnel"></div>
+  </div>
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
+    <h3 class="font-mono text-xs uppercase text-[var(--text-dim)] mb-4">
+      Signal Frequency
+    </h3>
+
+    <div id="signal-frequency"></div>
+  </div>
+
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6 mt-6">
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
+    <h3 class="font-mono text-xs uppercase text-[var(--text-dim)] mb-4">
+      Top Targeted Users
+    </h3>
+
+    <div id="top-users"></div>
+  </div
+
+  <div class="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
+    <h3 class="font-mono text-xs uppercase text-[var(--text-dim)] mb-4">
+      Risk Trend
+    </h3>
+
+    <div id="risk-trend"></div>
+  </div>
+
+</div>
+
+</section>
 </main>
 
 <footer class="max-w-7xl mx-auto px-6 pb-10 pt-4 text-xs font-mono text-[var(--text-dim)] border-t border-[var(--line)]">
@@ -229,6 +303,31 @@
 const API = 'http://127.0.0.1:8000';
 let autoFeedInterval = null;
 let allCases = [];
+
+function getDeviceFingerprint() {
+  const raw = navigator.userAgent + screen.width + screen.height + navigator.language;
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = (hash << 5) - hash + raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return "device_" + Math.abs(hash).toString(16);
+}
+
+function useRealLocation() {
+  device_id.value = getDeviceFingerprint();
+  if (!navigator.geolocation) {
+    alert("Geolocation not supported in this browser");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      latitude.value = pos.coords.latitude.toFixed(4);
+      longitude.value = pos.coords.longitude.toFixed(4);
+    },
+    (err) => alert("Location permission denied — using manual values instead")
+  );
+}
 
 function switchTab(name) {
   ['queue','score','analytics'].forEach(t => {
@@ -316,7 +415,27 @@ function toggleAutoFeed() {
     btn.textContent = '■ stop live feed';
   }
 }
+async function resetDemo() {
 
+  if (!confirm("Clear all demo data?")) {
+    return;
+  }
+
+  await fetch(
+    API + "/api/reset",
+    {
+      method: "POST"
+    }
+  );
+
+  await refreshQueue();
+
+  document.getElementById("case-detail").innerHTML = `
+    <div class="p-8 text-center text-sm text-[var(--text-dim)]">
+      Demo data cleared
+    </div>
+  `;
+}
 async function refreshQueue() {
   try {
     const [casesRes, statsRes] = await Promise.all([fetch(API + '/api/cases'), fetch(API + '/api/stats')]);
@@ -345,8 +464,17 @@ function renderQueue() {
     </div>`).join('');
 }
 
-function showCase(id) {
+async function showCase(id) {
   const c = allCases.find(x => x.id === id);
+  let history = [];
+
+try {
+  history = await fetch(
+    API + `/api/history/${c.event.user_id}`
+  ).then(r => r.json());
+} catch (e) {
+  console.error("History fetch failed", e);
+}
   if (!c) return;
   const style = levelStyles[c.risk.risk_level] || levelStyles.LOW;
   document.getElementById('case-detail').innerHTML = `
@@ -369,6 +497,25 @@ function showCase(id) {
         </div>
       </div>
       <p class="text-sm text-[var(--text-dim)] mb-4 leading-relaxed">${c.risk.explanation}</p>
+      <div class="mb-5">
+  <p class="font-mono text-xs text-[var(--text-dim)] uppercase mb-2">
+    Event Timeline
+  </p>
+
+  <div class="space-y-2 max-h-48 overflow-y-auto">
+    ${history.map(h => `
+      <div class="border-l-2 border-[var(--emerald-dim)] pl-3 py-1">
+        <div class="text-xs font-mono text-[var(--emerald)]">
+          ${h.event_type}
+        </div>
+
+        <div class="text-[10px] text-[var(--text-dim)]">
+          ${h.timestamp}
+        </div>
+      </div>
+    `).join('')}
+  </div>
+</div>
       <div class="space-y-2 mb-5">
         ${c.risk.signals.map(s => `
           <div class="signal-row ${s.triggered ? 'triggered' : 'clear'} rounded-r-lg px-3 py-2">
@@ -398,24 +545,173 @@ async function decideCase(id, decision) {
 }
 
 function renderAnalytics() {
-  const total = allCases.length;
-  const frozen = allCases.filter(c => c.decision === 'FROZEN').length;
-  const avg = total ? Math.round(allCases.reduce((s,c) => s + c.risk.risk_score, 0) / total) : 0;
-  document.getElementById('an-total').textContent = total;
-  document.getElementById('an-frozen').textContent = frozen;
-  document.getElementById('an-avg').textContent = avg;
 
-  const levels = ['LOW','MEDIUM','HIGH'];
-  const counts = levels.map(l => allCases.filter(c => c.risk.risk_level === l).length);
-  const max = Math.max(...counts, 1);
-  const colors = { LOW: 'var(--emerald)', MEDIUM: 'var(--amber)', HIGH: 'var(--coral)' };
-  document.getElementById('bar-chart').innerHTML = levels.map((l,i) => `
-    <div>
-      <div class="flex justify-between text-xs font-mono mb-1"><span class="text-[var(--text-dim)]">${l}</span><span>${counts[i]}</span></div>
-      <div class="h-2 rounded-full bg-[var(--panel-2)] overflow-hidden">
-        <div class="h-full rounded-full" style="width:${(counts[i]/max)*100}%; background:${colors[l]}"></div>
+  const total = allCases.length;
+
+  const frozen =
+    allCases.filter(c => c.decision === "FROZEN").length;
+
+  const avg =
+    total
+      ? Math.round(
+          allCases.reduce(
+            (s,c)=>s+c.risk.risk_score,0
+          ) / total
+        )
+      : 0;
+
+  const high =
+    allCases.filter(
+      c => c.risk.risk_level === "HIGH"
+    ).length;
+
+  const detection =
+    total
+      ? Math.round((high / total) * 100)
+      : 0;
+
+  document.getElementById("an-total").textContent = total;
+  document.getElementById("an-frozen").textContent = frozen;
+  document.getElementById("an-avg").textContent = avg;
+  document.getElementById("an-detection").textContent =
+      detection + "%";
+
+  renderFraudFunnel();
+  renderSignalFrequency();
+  renderTopUsers();
+  renderRiskTrend();
+}
+function renderFraudFunnel() {
+
+  const total = allCases.length;
+
+  const high =
+    allCases.filter(
+      c => c.risk.risk_level === "HIGH"
+    ).length;
+
+  const frozen =
+    allCases.filter(
+      c => c.decision === "FROZEN"
+    ).length;
+
+  document.getElementById("fraud-funnel").innerHTML = `
+    <div class="space-y-4">
+
+      <div>
+        <div class="flex justify-between text-xs font-mono">
+          <span>Total Events</span>
+          <span>${total}</span>
+        </div>
+        <div class="h-3 bg-[var(--panel-2)] rounded mt-1">
+          <div class="h-3 bg-[var(--emerald)] rounded w-full"></div>
+        </div>
       </div>
-    </div>`).join('');
+
+      <div>
+        <div class="flex justify-between text-xs font-mono">
+          <span>Flagged High Risk</span>
+          <span>${high}</span>
+        </div>
+        <div class="h-3 bg-[var(--panel-2)] rounded mt-1">
+          <div class="h-3 bg-[var(--amber)] rounded"
+            style="width:${total ? (high/total)*100 : 0}%">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs font-mono">
+          <span>Frozen</span>
+          <span>${frozen}</span>
+        </div>
+        <div class="h-3 bg-[var(--panel-2)] rounded mt-1">
+          <div class="h-3 bg-[var(--coral)] rounded"
+            style="width:${total ? (frozen/total)*100 : 0}%">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+function renderSignalFrequency() {
+
+  const counts = {};
+
+  allCases.forEach(c => {
+
+    c.risk.signals.forEach(s => {
+
+      if(s.triggered){
+
+        counts[s.signal] =
+          (counts[s.signal] || 0) + 1;
+      }
+    });
+  });
+
+  const html = Object.entries(counts)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([name,count])=>`
+      <div class="flex justify-between py-2 border-b border-[var(--line)]">
+        <span class="text-xs font-mono">${name}</span>
+        <span class="text-xs font-mono text-[var(--coral)]">${count}</span>
+      </div>
+    `).join("");
+
+  document.getElementById("signal-frequency").innerHTML =
+    html || "No signals yet";
+}
+function renderTopUsers() {
+
+  const users = {};
+
+  allCases.forEach(c => {
+
+    users[c.event.user_id] =
+      (users[c.event.user_id] || 0) + 1;
+  });
+
+  const html =
+    Object.entries(users)
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0,5)
+      .map(([user,count])=>`
+        <div class="flex justify-between py-2 border-b border-[var(--line)]">
+          <span>${user}</span>
+          <span class="font-mono">${count}</span>
+        </div>
+      `).join("");
+
+  document.getElementById("top-users").innerHTML = html;
+}
+function renderRiskTrend() {
+
+  const recent =
+    allCases.slice(0,15).reverse();
+
+  const max = 100;
+
+  document.getElementById("risk-trend").innerHTML =
+    recent.map(c=>`
+      <div class="flex items-center gap-2 mb-2">
+
+        <div class="w-20 text-xs font-mono">
+          ${c.risk.risk_score}
+        </div>
+
+        <div class="flex-1 h-2 rounded bg-[var(--panel-2)]">
+
+          <div
+            class="h-2 rounded bg-[var(--emerald)]"
+            style="width:${(c.risk.risk_score/max)*100}%">
+          </div>
+
+        </div>
+
+      </div>
+    `).join("");
 }
 
 // initial load
